@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"BackEnd-University/models"
+	"github.com/MRXAZK/BackEnd-University/models"
 
 	"github.com/gofiber/fiber/v2"
 )

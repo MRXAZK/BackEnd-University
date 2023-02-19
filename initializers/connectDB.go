@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"BackEnd-University/models"
+	"github.com/MRXAZK/BackEnd-University/models"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

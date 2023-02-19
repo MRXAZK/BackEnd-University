@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"BackEnd-University/initializers"
-	"BackEnd-University/models"
-	"BackEnd-University/utils"
+	"github.com/MRXAZK/BackEnd-University/initializers"
+	"github.com/MRXAZK/BackEnd-University/models"
+	"github.com/MRXAZK/BackEnd-University/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/redis/go-redis/v9"

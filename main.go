@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"BackEnd-University/controllers"
-	"BackEnd-University/initializers"
-	"BackEnd-University/middleware"
+	"github.com/MRXAZK/BackEnd-University/controllers"
+	"github.com/MRXAZK/BackEnd-University/initializers"
+	"github.com/MRXAZK/BackEnd-University/middleware"
 
 	"github.com/redis/go-redis/v9"
 

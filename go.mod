@@ -1,4 +1,4 @@
-module BackEnd-University
+module github.com/MRXAZK/BackEnd-University
 
 go 1.20
 
