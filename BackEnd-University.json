@@ -1,0 +1,200 @@
+{
+    "info": {
+        "name": "BackEnd-University",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "description": ""
+    },
+    "item": [
+        {
+            "name": "Auth",
+            "item": [
+                {
+                    "name": "Register",
+                    "request": {
+                        "method": "POST",
+                        "url": {
+                            "raw": "{{host}}/api/auth/register",
+                            "path": [
+                                "api",
+                                "auth",
+                                "register"
+                            ],
+                            "host": [
+                                "{{host}}"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            },
+                            "raw": "{\n    \"email\": \"admin@admin.com\",\n    \"name\": \"Admin\",\n    \"password\": \"password123\",\n    \"passwordConfirm\": \"password123\",\n    \"photo\": \"default.png\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Logout",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{host}}/api/auth/logout",
+                            "path": [
+                                "api",
+                                "auth",
+                                "logout"
+                            ],
+                            "host": [
+                                "{{host}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Login",
+                    "request": {
+                        "method": "POST",
+                        "url": {
+                            "raw": "{{host}}/api/auth/login",
+                            "path": [
+                                "api",
+                                "auth",
+                                "login"
+                            ],
+                            "host": [
+                                "{{host}}"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            },
+                            "raw": "{\n    \"email\": \"admin@admin.com\",\n    \"password\": \"password123\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Refresh Token",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{host}}/api/auth/refresh",
+                            "path": [
+                                "api",
+                                "auth",
+                                "refresh"
+                            ],
+                            "host": [
+                                "{{host}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "User",
+            "item": [
+                {
+                    "name": "Get Me",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{host}}/api/users/me",
+                            "path": [
+                                "api",
+                                "users",
+                                "me"
+                            ],
+                            "host": [
+                                "{{host}}"
+                            ]
+                        },
+                        "auth": {
+                            "type": "oauth2",
+                            "oauth2": [
+                                {
+                                    "key": "accessToken",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "grant_type",
+                                    "value": "authorization_code",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "clientId",
+                                    "value": "",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "clientSecret",
+                                    "value": "",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "accessTokenUrl",
+                                    "value": "",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "authUrl",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "username",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "password",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "state",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "scope",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "headerPrefix",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "code_verifier",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "challengeAlgorithm",
+                                    "type": "string"
+                                },
+                                {
+                                    "key": "client_authentication",
+                                    "value": "header",
+                                    "type": "string"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Root",
+            "request": {
+                "method": "GET",
+                "url": {
+                    "raw": "{{host}}",
+                    "host": [
+                        "{{host}}"
+                    ]
+                }
+            }
+        }
+    ]
+}
