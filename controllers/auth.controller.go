@@ -89,12 +89,12 @@ func SignInUser(c *fiber.Ctx) error {
 
 	config, _ := initializers.LoadConfig(".")
 
-	accessTokenDetails, err := utils.CreateToken(user.ID.String(), config.AccessTokenExpiresIn, config.AccessTokenPrivateKey)
+	accessTokenDetails, err := utils.CreateToken(user.ID.String(), config.AccessTokenExpiresIn, config.JWTTokenPrivateKey)
 	if err != nil {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"status": "fail", "message": err.Error()})
 	}
 
-	refreshTokenDetails, err := utils.CreateToken(user.ID.String(), config.RefreshTokenExpiresIn, config.RefreshTokenPrivateKey)
+	refreshTokenDetails, err := utils.CreateToken(user.ID.String(), config.RefreshTokenExpiresIn, config.JWTTokenPrivateKey)
 	if err != nil {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"status": "fail", "message": err.Error()})
 	}
@@ -157,7 +157,7 @@ func RefreshAccessToken(c *fiber.Ctx) error {
 	config, _ := initializers.LoadConfig(".")
 	ctx := context.TODO()
 
-	tokenClaims, err := utils.ValidateToken(refresh_token, config.RefreshTokenPublicKey)
+	tokenClaims, err := utils.ValidateToken(refresh_token, config.JWTTokenPublicKey)
 	if err != nil {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"status": "fail", "message": err.Error()})
 	}
@@ -179,7 +179,7 @@ func RefreshAccessToken(c *fiber.Ctx) error {
 		}
 	}
 
-	accessTokenDetails, err := utils.CreateToken(user.ID.String(), config.AccessTokenExpiresIn, config.AccessTokenPrivateKey)
+	accessTokenDetails, err := utils.CreateToken(user.ID.String(), config.AccessTokenExpiresIn, config.JWTTokenPrivateKey)
 	if err != nil {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"status": "fail", "message": err.Error()})
 	}
@@ -226,7 +226,7 @@ func LogoutUser(c *fiber.Ctx) error {
 	config, _ := initializers.LoadConfig(".")
 	ctx := context.TODO()
 
-	tokenClaims, err := utils.ValidateToken(refresh_token, config.RefreshTokenPublicKey)
+	tokenClaims, err := utils.ValidateToken(refresh_token, config.JWTTokenPublicKey)
 	if err != nil {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"status": "fail", "message": err.Error()})
 	}

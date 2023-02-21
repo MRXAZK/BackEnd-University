@@ -16,8 +16,12 @@ func ConnectRedis(config *Config) {
 	ctx = context.TODO()
 
 	RedisClient = redis.NewClient(&redis.Options{
-		Addr: config.RedisUri,
+		Addr: config.RedisHost + ":" + config.RedisPort,
 	})
+
+	if config.RedisPassword != "" {
+		RedisClient.Options().Password = config.RedisPassword
+	}
 
 	if _, err := RedisClient.Ping(ctx).Result(); err != nil {
 		panic(err)

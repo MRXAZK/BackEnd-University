@@ -8,14 +8,14 @@ services:
     volumes:
       - progresDB:/var/lib/postgresql/data
     env_file:
-      - ./app.env
+      - ./.env
     networks:
       - backend_univ
   pgAdmin:
     image: dpage/pgadmin4
     container_name: pgAdmin
     env_file:
-      - ./app.env
+      - ./.env
     ports:
       - "5050:80"
     networks:

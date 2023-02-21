@@ -1,1 +1,3 @@
-app.env
+.env
+jwt_public.key
+jwt_private.key

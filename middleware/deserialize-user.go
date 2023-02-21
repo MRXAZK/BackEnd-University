@@ -29,7 +29,7 @@ func DeserializeUser(c *fiber.Ctx) error {
 
 	config, _ := initializers.LoadConfig(".")
 
-	tokenClaims, err := utils.ValidateToken(access_token, config.AccessTokenPublicKey)
+	tokenClaims, err := utils.ValidateToken(access_token, config.JWTTokenPublicKey)
 	if err != nil {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"status": "fail", "message": err.Error()})
 	}

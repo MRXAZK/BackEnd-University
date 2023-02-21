@@ -14,23 +14,23 @@ type Config struct {
 	DBPort         string `mapstructure:"POSTGRES_PORT"`
 	ServerPort     string `mapstructure:"PORT"`
 
-	ClientOrigin string `mapstructure:"CLIENT_ORIGIN"`
-	RedisUri     string `mapstructure:"REDIS_URL"`
+	ClientOrigin  string `mapstructure:"CLIENT_ORIGIN"`
+	RedisPassword string `mapstructure:"REDIS_PASSWORD"`
+	RedisHost     string `mapstructure:"REDIS_HOST"`
+	RedisPort     string `mapstructure:"REDIS_PORT"`
 
-	AccessTokenPrivateKey  string        `mapstructure:"ACCESS_TOKEN_PRIVATE_KEY"`
-	AccessTokenPublicKey   string        `mapstructure:"ACCESS_TOKEN_PUBLIC_KEY"`
-	RefreshTokenPrivateKey string        `mapstructure:"REFRESH_TOKEN_PRIVATE_KEY"`
-	RefreshTokenPublicKey  string        `mapstructure:"REFRESH_TOKEN_PUBLIC_KEY"`
-	AccessTokenExpiresIn   time.Duration `mapstructure:"ACCESS_TOKEN_EXPIRED_IN"`
-	RefreshTokenExpiresIn  time.Duration `mapstructure:"REFRESH_TOKEN_EXPIRED_IN"`
-	AccessTokenMaxAge      int           `mapstructure:"ACCESS_TOKEN_MAXAGE"`
-	RefreshTokenMaxAge     int           `mapstructure:"REFRESH_TOKEN_MAXAGE"`
+	JWTTokenPrivateKey    string        `mapstructure:"JWT_PRIVATE_KEY"`
+	JWTTokenPublicKey     string        `mapstructure:"JWT_PUBLIC_KEY"`
+	AccessTokenExpiresIn  time.Duration `mapstructure:"ACCESS_TOKEN_EXPIRED_IN"`
+	RefreshTokenExpiresIn time.Duration `mapstructure:"REFRESH_TOKEN_EXPIRED_IN"`
+	AccessTokenMaxAge     int           `mapstructure:"ACCESS_TOKEN_MAXAGE"`
+	RefreshTokenMaxAge    int           `mapstructure:"REFRESH_TOKEN_MAXAGE"`
 }
 
 func LoadConfig(path string) (config Config, err error) {
 	viper.AddConfigPath(path)
+	viper.SetConfigName(".env")
 	viper.SetConfigType("env")
-	viper.SetConfigName("app")
 
 	viper.AutomaticEnv()
 
