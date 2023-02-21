@@ -5,12 +5,13 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
-      
-      # Add step to create .env file with secrets
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - name: Create .env file with secrets
         run: |
           echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}" >> .env
@@ -42,15 +43,10 @@ jobs:
       - name: Push image to Docker Hub
         run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
 
-      # Deploy to Railway
-      - name: Install Railway
-        run: npm i -g @railway/cli
-
-      - name: Authenticate with Railway
-        run: railway auth login ${{ secrets.RAILWAY_TOKEN }}
-
-      - name: Set Railway environment variables
-        run: railway run set -e .env
+      - name: Install Railway CLI
+        run: curl -sSL https://railway.app/cli | sudo sh -
 
       - name: Deploy to Railway
         run: railway up
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
