@@ -40,7 +40,7 @@ func main() {
 
 	app.All("/", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
-			"Message": "BackEnd - University",
+			"Message": "Career Assistent BackEnd - University",
 			"Author":  "Farhan Aulianda",
 		})
 	})
