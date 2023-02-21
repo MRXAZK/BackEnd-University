@@ -35,9 +35,10 @@ jobs:
 
       # Build the Docker image
       - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:latest --tag ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
+        run: docker build . -f Dockerfile-prod --tag ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:latest --tag ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
         env:
           DOCKER_BUILDKIT: 1
+
 
       - name: Log in to Docker Hub
         run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
