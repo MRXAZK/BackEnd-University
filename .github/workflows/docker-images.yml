@@ -1,4 +1,4 @@
-name: Deploy to Docker Hub and Railway
+name: Deploy to Docker Hub 
 
 on:
   push:
@@ -32,23 +32,15 @@ jobs:
           echo "ACCESS_TOKEN_MAXAGE=${{ secrets.ACCESS_TOKEN_MAXAGE }}" >> .env
           echo "REFRESH_TOKEN_EXPIRED_IN=${{ secrets.REFRESH_TOKEN_EXPIRED_IN }}" >> .env
           echo "REFRESH_TOKEN_MAXAGE=${{ secrets.REFRESH_TOKEN_MAXAGE }}" >> .env
-   
 
       # Build the Docker image
       - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
+        run: docker build . --file Dockerfile --tag ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:latest --tag ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
+        env:
+          DOCKER_BUILDKIT: 1
 
       - name: Log in to Docker Hub
         run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Push image to Docker Hub
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
-
-      - name: Install Railway
-        run: npm i -g @railway/cli
-
-      - name: Deploy to Railway
-        run: railway up
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }} && docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:latest
