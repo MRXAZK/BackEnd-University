@@ -1,4 +1,4 @@
-name: Deploy to Railway
+name: Deploy to Docker Hub and Railway
 
 on:
   push:
@@ -32,6 +32,8 @@ jobs:
           echo "ACCESS_TOKEN_MAXAGE=${{ secrets.ACCESS_TOKEN_MAXAGE }}" >> .env
           echo "REFRESH_TOKEN_EXPIRED_IN=${{ secrets.REFRESH_TOKEN_EXPIRED_IN }}" >> .env
           echo "REFRESH_TOKEN_MAXAGE=${{ secrets.REFRESH_TOKEN_MAXAGE }}" >> .env
+          mkdir build
+          mv .env build/
 
       # Build the Docker image
       - name: Build the Docker image
