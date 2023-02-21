@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func DeserializeUser(c *fiber.Ctx) error {
+func DeserializeUniversity(c *fiber.Ctx) error {
 	var access_token string
 	authorization := c.Get("Authorization")
 
@@ -35,19 +35,19 @@ func DeserializeUser(c *fiber.Ctx) error {
 	}
 
 	ctx := context.TODO()
-	userid, err := initializers.RedisClient.Get(ctx, tokenClaims.TokenUuid).Result()
+	universityid, err := initializers.RedisClient.Get(ctx, tokenClaims.TokenUuid).Result()
 	if err == redis.Nil {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"status": "fail", "message": "Token is invalid or session has expired"})
 	}
 
-	var user models.User
-	err = initializers.DB.First(&user, "id = ?", userid).Error
+	var university models.University
+	err = initializers.DB.First(&university, "id = ?", universityid).Error
 
 	if err == gorm.ErrRecordNotFound {
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"status": "fail", "message": "The user belonging to this token no logger exists"})
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"status": "fail", "message": "The university belonging to this token no logger exists"})
 	}
 
-	c.Locals("user", models.FilterUserRecord(&user))
+	c.Locals("university", models.FilterUniversityRecord(&university))
 	c.Locals("access_token_uuid", tokenClaims.TokenUuid)
 
 	return c.Next()

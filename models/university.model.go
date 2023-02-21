@@ -7,12 +7,12 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-type User struct {
+type University struct {
 	ID        *uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primary_key"`
 	Name      string     `gorm:"type:varchar(100);not null"`
 	Email     string     `gorm:"type:varchar(100);uniqueIndex:idx_email;not null"`
 	Password  string     `gorm:"type:varchar(100);not null"`
-	Role      *string    `gorm:"type:varchar(50);default:'user';not null"`
+	Role      *string    `gorm:"type:varchar(50);default:'university';not null"`
 	Provider  *string    `gorm:"type:varchar(50);default:'local';not null"`
 	Photo     *string    `gorm:"not null;default:'default.png'"`
 	Verified  *bool      `gorm:"not null;default:false"`
@@ -33,7 +33,7 @@ type SignInInput struct {
 	Password string `json:"password"  validate:"required"`
 }
 
-type UserResponse struct {
+type UniversityResponse struct {
 	ID        uuid.UUID `json:"id,omitempty"`
 	Name      string    `json:"name,omitempty"`
 	Email     string    `json:"email,omitempty"`
@@ -44,16 +44,16 @@ type UserResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func FilterUserRecord(user *User) UserResponse {
-	return UserResponse{
-		ID:        *user.ID,
-		Name:      user.Name,
-		Email:     user.Email,
-		Role:      *user.Role,
-		Photo:     *user.Photo,
-		Provider:  *user.Provider,
-		CreatedAt: *user.CreatedAt,
-		UpdatedAt: *user.UpdatedAt,
+func FilterUniversityRecord(university *University) UniversityResponse {
+	return UniversityResponse{
+		ID:        *university.ID,
+		Name:      university.Name,
+		Email:     university.Email,
+		Role:      *university.Role,
+		Photo:     *university.Photo,
+		Provider:  *university.Provider,
+		CreatedAt: *university.CreatedAt,
+		UpdatedAt: *university.UpdatedAt,
 	}
 }
 

@@ -104,10 +104,10 @@
                     "request": {
                         "method": "GET",
                         "url": {
-                            "raw": "{{host}}/api/users/me",
+                            "raw": "{{host}}/api/university/me",
                             "path": [
                                 "api",
-                                "users",
+                                "user",
                                 "me"
                             ],
                             "host": [

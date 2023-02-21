@@ -15,7 +15,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func SignUpUser(c *fiber.Ctx) error {
+func SignUpUniversity(c *fiber.Ctx) error {
 	var payload *models.SignUpInput
 
 	if err := c.BodyParser(&payload); err != nil {
@@ -39,25 +39,25 @@ func SignUpUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"status": "fail", "message": err.Error()})
 	}
 
-	newUser := models.User{
+	newUniversity := models.University{
 		Name:     payload.Name,
 		Email:    strings.ToLower(payload.Email),
 		Password: string(hashedPassword),
 		Photo:    &payload.Photo,
 	}
 
-	result := initializers.DB.Create(&newUser)
+	result := initializers.DB.Create(&newUniversity)
 
 	if result.Error != nil && strings.Contains(result.Error.Error(), "duplicate key value violates unique") {
-		return c.Status(fiber.StatusConflict).JSON(fiber.Map{"status": "fail", "message": "User with that email already exists"})
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{"status": "fail", "message": "University with that email already exists"})
 	} else if result.Error != nil {
 		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"status": "error", "message": "Something bad happened"})
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"status": "success", "data": fiber.Map{"user": models.FilterUserRecord(&newUser)}})
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"status": "success", "data": fiber.Map{"university": models.FilterUniversityRecord(&newUniversity)}})
 }
 
-func SignInUser(c *fiber.Ctx) error {
+func SignInUniversity(c *fiber.Ctx) error {
 	var payload *models.SignInInput
 
 	if err := c.BodyParser(&payload); err != nil {
@@ -71,8 +71,8 @@ func SignInUser(c *fiber.Ctx) error {
 
 	message := "Invalid email or password"
 
-	var user models.User
-	err := initializers.DB.First(&user, "email = ?", strings.ToLower(payload.Email)).Error
+	var university models.University
+	err := initializers.DB.First(&university, "email = ?", strings.ToLower(payload.Email)).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"status": "fail", "message": message})
@@ -82,19 +82,19 @@ func SignInUser(c *fiber.Ctx) error {
 		}
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(payload.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(university.Password), []byte(payload.Password))
 	if err != nil {
 		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"status": "fail", "message": message})
 	}
 
 	config, _ := initializers.LoadConfig(".")
 
-	accessTokenDetails, err := utils.CreateToken(user.ID.String(), config.AccessTokenExpiresIn, config.JWTTokenPrivateKey)
+	accessTokenDetails, err := utils.CreateToken(university.ID.String(), config.AccessTokenExpiresIn, config.JWTTokenPrivateKey)
 	if err != nil {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"status": "fail", "message": err.Error()})
 	}
 
-	refreshTokenDetails, err := utils.CreateToken(user.ID.String(), config.RefreshTokenExpiresIn, config.JWTTokenPrivateKey)
+	refreshTokenDetails, err := utils.CreateToken(university.ID.String(), config.RefreshTokenExpiresIn, config.JWTTokenPrivateKey)
 	if err != nil {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"status": "fail", "message": err.Error()})
 	}
@@ -102,12 +102,12 @@ func SignInUser(c *fiber.Ctx) error {
 	ctx := context.TODO()
 	now := time.Now()
 
-	errAccess := initializers.RedisClient.Set(ctx, accessTokenDetails.TokenUuid, user.ID.String(), time.Unix(*accessTokenDetails.ExpiresIn, 0).Sub(now)).Err()
+	errAccess := initializers.RedisClient.Set(ctx, accessTokenDetails.TokenUuid, university.ID.String(), time.Unix(*accessTokenDetails.ExpiresIn, 0).Sub(now)).Err()
 	if errAccess != nil {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"status": "fail", "message": errAccess.Error()})
 	}
 
-	errRefresh := initializers.RedisClient.Set(ctx, refreshTokenDetails.TokenUuid, user.ID.String(), time.Unix(*refreshTokenDetails.ExpiresIn, 0).Sub(now)).Err()
+	errRefresh := initializers.RedisClient.Set(ctx, refreshTokenDetails.TokenUuid, university.ID.String(), time.Unix(*refreshTokenDetails.ExpiresIn, 0).Sub(now)).Err()
 	if errAccess != nil {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"status": "fail", "message": errRefresh.Error()})
 	}
@@ -162,31 +162,31 @@ func RefreshAccessToken(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"status": "fail", "message": err.Error()})
 	}
 
-	userid, err := initializers.RedisClient.Get(ctx, tokenClaims.TokenUuid).Result()
+	universityid, err := initializers.RedisClient.Get(ctx, tokenClaims.TokenUuid).Result()
 	if err == redis.Nil {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"status": "fail", "message": message})
 	}
 
-	var user models.User
-	err = initializers.DB.First(&user, "id = ?", userid).Error
+	var university models.University
+	err = initializers.DB.First(&university, "id = ?", universityid).Error
 
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"status": "fail", "message": "the user belonging to this token no logger exists"})
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"status": "fail", "message": "the university belonging to this token no logger exists"})
 		} else {
 			return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"status": "fail", "message": err.Error()})
 
 		}
 	}
 
-	accessTokenDetails, err := utils.CreateToken(user.ID.String(), config.AccessTokenExpiresIn, config.JWTTokenPrivateKey)
+	accessTokenDetails, err := utils.CreateToken(university.ID.String(), config.AccessTokenExpiresIn, config.JWTTokenPrivateKey)
 	if err != nil {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"status": "fail", "message": err.Error()})
 	}
 
 	now := time.Now()
 
-	errAccess := initializers.RedisClient.Set(ctx, accessTokenDetails.TokenUuid, user.ID.String(), time.Unix(*accessTokenDetails.ExpiresIn, 0).Sub(now)).Err()
+	errAccess := initializers.RedisClient.Set(ctx, accessTokenDetails.TokenUuid, university.ID.String(), time.Unix(*accessTokenDetails.ExpiresIn, 0).Sub(now)).Err()
 	if errAccess != nil {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"status": "fail", "message": errAccess.Error()})
 	}
@@ -214,7 +214,7 @@ func RefreshAccessToken(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success", "access_token": accessTokenDetails.Token})
 }
 
-func LogoutUser(c *fiber.Ctx) error {
+func LogoutUniversity(c *fiber.Ctx) error {
 	message := "Token is invalid or session has expired"
 
 	refresh_token := c.Cookies("refresh_token")

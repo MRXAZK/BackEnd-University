@@ -46,13 +46,13 @@ func main() {
 	})
 
 	micro.Route("/auth", func(router fiber.Router) {
-		router.Post("/register", controllers.SignUpUser)
-		router.Post("/login", controllers.SignInUser)
-		router.Get("/logout", middleware.DeserializeUser, controllers.LogoutUser)
+		router.Post("/register", controllers.SignUpUniversity)
+		router.Post("/login", controllers.SignInUniversity)
+		router.Get("/logout", middleware.DeserializeUniversity, controllers.LogoutUniversity)
 		router.Get("/refresh", controllers.RefreshAccessToken)
 	})
 
-	micro.Get("/users/me", middleware.DeserializeUser, controllers.GetMe)
+	micro.Get("/university/me", middleware.DeserializeUniversity, controllers.GetMe)
 
 	ctx := context.TODO()
 	value, err := initializers.RedisClient.Get(ctx, "test").Result()
