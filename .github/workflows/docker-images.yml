@@ -67,11 +67,7 @@ jobs:
             docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
             docker run --rm --name ${{ secrets.DOCKER_REPOSITORY }} -d -p 80:8000 ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
   
-  send-notification:
-    runs-on: ubuntu-latest
-    needs: deploy-to-server
 
-    steps:
       # Sends a Telegram message if there was a connection error
       - name: Send Telegram message on error
         if: ${{ steps.ssh_check.outcome == 'failure' }}
