@@ -1,8 +1,8 @@
-name: Deploy to Docker Hub and Server
+name: Deploy to Docker Hub 
 
 on:
   push:
-    branches: [deploy]
+    branches: [ deploy ]
 
 jobs:
   build-and-deploy-to-hub:
@@ -14,27 +14,45 @@ jobs:
 
       - name: Create .env file with secrets
         run: |
-          # Loop over the secrets object and generate a .env file with each key-value pair
-          for key in "${!secrets[@]}"; do
-            echo "$key=${{ secrets[$key] }}" >> .env
-          done
+          echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}" >> .env
+          echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}" >> .env
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
+          echo "PGADMIN_DEFAULT_EMAIL=${{ secrets.PGADMIN_DEFAULT_EMAIL }}" >> .env
+          echo "PGADMIN_DEFAULT_PASSWORD=${{ secrets.PGADMIN_DEFAULT_PASSWORD }}" >> .env
+          echo "PORT=${{ secrets.PORT }}" >> .env
+          echo "CLIENT_ORIGIN=${{ secrets.CLIENT_ORIGIN }}" >> .env
+          echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> .env
+          echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> .env
+          echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
+          echo "JWT_PRIVATE_KEY=${{ secrets.JWT_PRIVATE_KEY }}" >> .env
+          echo "JWT_PUBLIC_KEY=${{ secrets.JWT_PUBLIC_KEY }}" >> .env
+          echo "ACCESS_TOKEN_EXPIRED_IN=${{ secrets.ACCESS_TOKEN_EXPIRED_IN }}" >> .env
+          echo "ACCESS_TOKEN_MAXAGE=${{ secrets.ACCESS_TOKEN_MAXAGE }}" >> .env
+          echo "REFRESH_TOKEN_EXPIRED_IN=${{ secrets.REFRESH_TOKEN_EXPIRED_IN }}" >> .env
+          echo "REFRESH_TOKEN_MAXAGE=${{ secrets.REFRESH_TOKEN_MAXAGE }}" >> .env
 
-      - name: Build and Push Docker image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
-            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:latest
+
+      # Build the Docker image
+      - name: Build the Docker image
+        run: docker build . --tag ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:latest --tag ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
         env:
           DOCKER_BUILDKIT: 1
 
+
+      - name: Log in to Docker Hub
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push image to Docker Hub
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }} && docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:latest
+      
   deploy-to-server:
-    needs: build-and-deploy-to-hub
     runs-on: ubuntu-latest
+    needs: build-and-deploy-to-hub
 
     steps:
+        # SSH and Docker container steps are inside a conditional statement that checks if server is connectable
       - name: Check server connection
         id: ssh_check
         uses: appleboy/ssh-action@master
@@ -58,7 +76,6 @@ jobs:
           chmod 400 ~/.ssh/id_rsa
 
       - name: SSH into Server and run Docker container
-        id: ssh_deploy
         if: ${{ steps.ssh_check.outcome == 'success' }}
         uses: appleboy/ssh-action@master
         with:
@@ -70,10 +87,10 @@ jobs:
             if docker ps -a | grep -q ${{ secrets.DOCKER_REPOSITORY }}; then docker stop ${{ secrets.DOCKER_REPOSITORY }} || true; fi
             docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
             docker run --rm --name ${{ secrets.DOCKER_REPOSITORY }} -d -p 80:8000 ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
-
+  
   send-telegram-message:
     needs: deploy-to-server
-    if: ${{ needs.deploy-to-server.outputs.ssh_deploy.outcome == 'success' }}
+    if: ${{ needs.deploy-to-server.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Send Telegram message on success
@@ -81,17 +98,20 @@ jobs:
         with:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: "Deployment successful! 🚀 Build and deploy to Docker Hub and Server is complete."
+          message: "Deployment successful! 🚀 Build and deploy to Docker Hub And Server is complete."
+      
 
   send-telegram-message-failure:
     needs: deploy-to-server
-    if: ${{ needs.deploy-to-server.outputs.ssh_deploy.outcome == 'failure' }}
+    if: ${{ needs.deploy-to-server.result != 'success' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Send Telegram message on success
+      - name: Send Telegram message on failure
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: "Deployment successful! 🚀 Build and deploy to Docker Hub and Server is complete."
+          message: "Deployment failed! 😞 Check the server and the workflow."
+      - name: Fail the job
+        run: exit 1
 
