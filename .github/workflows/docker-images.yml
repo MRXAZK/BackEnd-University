@@ -56,20 +56,6 @@ jobs:
 
     steps:
       # SSH and Docker container steps are inside a conditional statement that checks if server is connectable
-      - name: Check server connection
-        id: ssh_check
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USERNAME }}
-          password: ${{ secrets.SERVER_PASSWORD }}
-          port: ${{ secrets.SERVER_PORT }}
-          timeout: '60s'
-        continue-on-error: true
-
-      - name: Skip if server not connectable
-        if: ${{ steps.ssh_check.outcome == 'failure' }}
-        run: echo "Skipping SSH and Docker container steps since server is not connectable."
 
       - name: Copy private key
         if: ${{ steps.ssh_check.outcome == 'success' }}
@@ -107,7 +93,7 @@ jobs:
 
   send-telegram-message-failure:
     needs: deploy-to-server
-    if: ${{ needs.deploy-to-server.outputs.deployment-status == 'failure' }}
+    if: ${{ needs.deploy-to-server.outputs.deployment-status != 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Send Telegram message on failure
