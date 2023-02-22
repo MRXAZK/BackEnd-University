@@ -46,13 +46,16 @@ jobs:
       - name: Push image to Docker Hub
         run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }} && docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:latest
       
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.VPS_KEY }}
-          script: |
-            docker stop ca-backend-university || true
-            docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
-            docker run --rm --name ca-backend-university -d -p 80:8000 ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
+      - name: Copy private key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
+          chmod 400 ~/.ssh/id_rsa
+
+      - name: SSH into EC2 instance and run Docker container
+        run: |
+          ssh -o "StrictHostKeyChecking no" -i ~/.ssh/id_rsa ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} 'docker stop ${DOCKER_REPOSITORY} || true; docker pull ${DOCKER_USERNAME}/${DOCKER_REPOSITORY}:${{ github.sha }}; docker run --rm --name ${DOCKER_REPOSITORY} -d -p 80:8000 ${DOCKER_USERNAME}/${DOCKER_REPOSITORY}:${{ github.sha }}'
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_REPOSITORY: my-repository
+        
