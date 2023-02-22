@@ -50,8 +50,10 @@ jobs:
   deploy-to-server:
     runs-on: ubuntu-latest
     needs: build-and-deploy-to-hub
-
+    outputs:
+      ssh_result: ${{ steps.ssh_check.outputs.result }}
     steps:
+    
         # SSH and Docker container steps are inside a conditional statement that checks if server is connectable
 
       - name: Copy private key
@@ -70,6 +72,7 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           timeout: '60s'
         continue-on-error: true
+
 
       - name: Skip if server not connectable
         if: ${{ steps.ssh_check.outcome == 'failure' }}
@@ -91,7 +94,7 @@ jobs:
   
   send-telegram-message:
     needs: deploy-to-server
-    if: ${{ needs.steps.ssh_check.outcome == 'success' }}    
+    if: ${{ needs.deploy-to-server.outputs.ssh_result == 'success' }}    
     runs-on: ubuntu-latest
     steps:
       - name: Send Telegram message on success
@@ -104,7 +107,7 @@ jobs:
 
   send-telegram-message-failure:
     needs: deploy-to-server
-    if: ${{ needs.steps.ssh_check.outcome == 'failure' }}    
+    if: ${{ needs.deploy-to-server.outputs.ssh_result == 'failure' }}
     runs-on: ubuntu-latest
     steps:
       - name: Send Telegram message on failure
