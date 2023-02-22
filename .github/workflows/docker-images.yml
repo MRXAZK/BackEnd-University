@@ -49,12 +49,13 @@ jobs:
       - name: Copy private key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.SERVER_KEY }}" > ~/.ssh/id_rsa
           chmod 400 ~/.ssh/id_rsa
 
-      - name: SSH into EC2 instance and run Docker container
+      - name: SSH into Server and run Docker container
+        if: success() && always() # only run if the previous steps were successful
         run: |
-          ssh -o "StrictHostKeyChecking no" -i ~/.ssh/id_rsa ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} 'if docker ps -a | grep -q ${{ secrets.DOCKER_REPOSITORY }}; then docker stop ${{ secrets.DOCKER_REPOSITORY }} || true; fi; docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}; docker run --rm --name ${{ secrets.DOCKER_REPOSITORY }} -d -p 80:8000 ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}'
+          ssh -o "StrictHostKeyChecking no" -i ~/.ssh/id_rsa ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_HOST }} 'if docker ps -a | grep -q ${{ secrets.DOCKER_REPOSITORY }}; then docker stop ${{ secrets.DOCKER_REPOSITORY }} || true; fi; docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}; docker run --rm --name ${{ secrets.DOCKER_REPOSITORY }} -d -p 80:8000 ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}' || echo "Error: Failed to connect to the server"
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_REPOSITORY: ${{ secrets.DOCKER_REPOSITORY }}
