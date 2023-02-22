@@ -99,9 +99,7 @@ jobs:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: "Deployment successful! 🚀 Build and deploy to Docker Hub And Server is complete."
-      - name: Fail the job
-        run: exit 1
-
+      
 
   send-telegram-message-failure:
     needs: deploy-to-server
