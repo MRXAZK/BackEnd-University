@@ -54,7 +54,7 @@ jobs:
 
       - name: SSH into EC2 instance and run Docker container
         run: |
-          ssh -o "StrictHostKeyChecking no" -i ~/.ssh/id_rsa ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} 'docker stop ${{ secrets.DOCKER_REPOSITORY }} || true; docker pull ${DOCKER_USERNAME}/${DOCKER_REPOSITORY}:${{ github.sha }}; docker run --rm --name ${{ secrets.DOCKER_REPOSITORY }} -d -p 80:8000 ${DOCKER_USERNAME}/${DOCKER_REPOSITORY}:${{ github.sha }}'
+          ssh -o "StrictHostKeyChecking no" -i ~/.ssh/id_rsa ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} 'if docker ps -a | grep -q ${{ secrets.DOCKER_REPOSITORY }}; then docker stop ${{ secrets.DOCKER_REPOSITORY }} || true; fi; docker pull ${DOCKER_USERNAME}/${DOCKER_REPOSITORY}:${{ github.sha }}; docker run --rm --name ${{ secrets.DOCKER_REPOSITORY }} -d -p 80:8000 ${DOCKER_USERNAME}/${DOCKER_REPOSITORY}:${{ github.sha }}'
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_REPOSITORY: ${{ secrets.DOCKER_REPOSITORY }}
