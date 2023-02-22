@@ -2,85 +2,96 @@ name: Deploy to Docker Hub and Server
 
 on:
   push:
-    branches:
-      - deploy
+    branches: [deploy]
 
 jobs:
-  build-and-deploy:
+  build-and-deploy-to-hub:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
       - name: Create .env file with secrets
         run: |
-          envs=(
-            "POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}"
-            "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}"
-            "POSTGRES_USER=${{ secrets.POSTGRES_USER }}"
-            "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}"
-            "POSTGRES_DB=${{ secrets.POSTGRES_DB }}"
-            "PGADMIN_DEFAULT_EMAIL=${{ secrets.PGADMIN_DEFAULT_EMAIL }}"
-            "PGADMIN_DEFAULT_PASSWORD=${{ secrets.PGADMIN_DEFAULT_PASSWORD }}"
-            "PORT=${{ secrets.PORT }}"
-            "CLIENT_ORIGIN=${{ secrets.CLIENT_ORIGIN }}"
-            "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}"
-            "REDIS_HOST=${{ secrets.REDIS_HOST }}"
-            "REDIS_PORT=${{ secrets.REDIS_PORT }}"
-            "JWT_PRIVATE_KEY=${{ secrets.JWT_PRIVATE_KEY }}"
-            "JWT_PUBLIC_KEY=${{ secrets.JWT_PUBLIC_KEY }}"
-            "ACCESS_TOKEN_EXPIRED_IN=${{ secrets.ACCESS_TOKEN_EXPIRED_IN }}"
-            "ACCESS_TOKEN_MAXAGE=${{ secrets.ACCESS_TOKEN_MAXAGE }}"
-            "REFRESH_TOKEN_EXPIRED_IN=${{ secrets.REFRESH_TOKEN_EXPIRED_IN }}"
-            "REFRESH_TOKEN_MAXAGE=${{ secrets.REFRESH_TOKEN_MAXAGE }}"
-          )
-          printf "%s\n" "${envs[@]}" > .env
+          # Loop over the secrets object and generate a .env file with each key-value pair
+          for key in "${!secrets[@]}"; do
+            echo "$key=${{ secrets[$key] }}" >> .env
+          done
 
-      - name: Build and push Docker image
+      - name: Build and Push Docker image
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:latest
             ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:latest
         env:
           DOCKER_BUILDKIT: 1
 
-      - name: Deploy to server
+  deploy-to-server:
+    needs: build-and-deploy-to-hub
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check server connection
+        id: ssh_check
         uses: appleboy/ssh-action@master
-        if: success()
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_PORT }}
+          timeout: '60s'
+        continue-on-error: true
+
+      - name: Skip if server not connectable
+        if: ${{ steps.ssh_check.outcome == 'failure' }}
+        run: echo "Skipping SSH and Docker container steps since server is not connectable."
+
+      - name: Copy private key
+        if: ${{ steps.ssh_check.outcome == 'success' }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_KEY }}" > ~/.ssh/id_rsa
+          chmod 400 ~/.ssh/id_rsa
+
+      - name: SSH into Server and run Docker container
+        id: ssh_deploy
+        if: ${{ steps.ssh_check.outcome == 'success' }}
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SERVER_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
-            docker stop ${{ secrets.DOCKER_REPOSITORY }} || true
-            docker rm ${{ secrets.DOCKER_REPOSITORY }} || true
+            if docker ps -a | grep -q ${{ secrets.DOCKER_REPOSITORY }}; then docker stop ${{ secrets.DOCKER_REPOSITORY }} || true; fi
             docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
-            docker run --name ${{ secrets.DOCKER_REPOSITORY }} -d -p 80:8000 --restart always ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
+            docker run --rm --name ${{ secrets.DOCKER_REPOSITORY }} -d -p 80:8000 ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
 
-  notify-success:
-    needs: build-and-deploy
-    if: always()
+  send-telegram-message:
+    needs: deploy-to-server
+    if: ${{ needs.deploy-to-server.outputs.ssh_deploy.outcome == 'success' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Send success notification
-        if: success()
+      - name: Send Telegram message on success
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: "Deployment successful! 🚀"
+          message: "Deployment successful! 🚀 Build and deploy to Docker Hub and Server is complete."
 
-  notify-failure:
-    needs: build-and-deploy
-    if: failure()
+  send-telegram-message-failure:
+    needs: deploy-to-server
+    if: ${{ needs.deploy-to-server.outputs.ssh_deploy.outcome == 'failure' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Send failure notification
+      - name: Send Telegram message on success
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: "Deployment successful! 🚀 Build and deploy to Docker Hub and Server is complete."
+
