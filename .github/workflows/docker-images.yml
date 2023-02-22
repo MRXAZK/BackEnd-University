@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-deploy-to-hub
     outputs:
-      ssh_result: ${{ steps.ssh_check.outputs.result }}
+      ssh_result: ${{ steps.ssh_check.outputs.outcome }}
     steps:
     
         # SSH and Docker container steps are inside a conditional statement that checks if server is connectable
