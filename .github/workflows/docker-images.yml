@@ -12,7 +12,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Create .env file with secrets
+      - name: Create .env file
         run: |
           echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}" >> .env
           echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}" >> .env
@@ -46,17 +46,47 @@ jobs:
       - name: Push image to Docker Hub
         run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }} && docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:latest
       
+        # SSH and Docker container steps are inside a conditional statement that checks if server is connectable
+      - name: Check server connection
+        id: ssh_check
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_PORT }}
+          timeout: '60s'
+        continue-on-error: true
+
+      - name: Skip if server not connectable
+        if: ${{ steps.ssh_check.outcome == 'failure' }}
+        run: echo "Skipping SSH and Docker container steps since server is not connectable."
+
       - name: Copy private key
+        if: ${{ steps.ssh_check.outcome == 'success' }}
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SERVER_KEY }}" > ~/.ssh/id_rsa
           chmod 400 ~/.ssh/id_rsa
 
       - name: SSH into Server and run Docker container
-        if: success() && always() # only run if the previous steps were successful
-        run: |
-          ssh -o "StrictHostKeyChecking no" -i ~/.ssh/id_rsa ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_HOST }} 'if docker ps -a | grep -q ${{ secrets.DOCKER_REPOSITORY }}; then docker stop ${{ secrets.DOCKER_REPOSITORY }} || true; fi; docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}; docker run --rm --name ${{ secrets.DOCKER_REPOSITORY }} -d -p 80:8000 ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}' || echo "Error: Failed to connect to the server"
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_REPOSITORY: ${{ secrets.DOCKER_REPOSITORY }}
-        
+        if: ${{ steps.ssh_check.outcome == 'success' }}
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          script: |
+            if docker ps -a | grep -q ${{ secrets.DOCKER_REPOSITORY }}; then docker stop ${{ secrets.DOCKER_REPOSITORY }} || true; fi
+            docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
+            docker run --rm --name ${{ secrets.DOCKER_REPOSITORY }} -d -p 80:8000 ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
+
+      # Sends a Telegram message if there was a connection error
+      - name: Send Telegram message on error
+        if: ${{ steps.ssh_check.outcome == 'failure' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: "There was an error connecting to the server for deployment. Check the server and the workflow"
