@@ -107,7 +107,7 @@ jobs:
 
   send-telegram-message-failure:
     needs: deploy-to-server
-    if: ${{ needs.deploy-to-server.outputs.deployment-status != 'failure' }}
+    if: ${{ needs.deploy-to-server.outputs.deployment-status == 'failure' }}
     runs-on: ubuntu-latest
     steps:
       - name: Send Telegram message on failure
