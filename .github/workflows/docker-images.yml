@@ -92,10 +92,12 @@ jobs:
   
   send-telegram-message:
     needs: deploy-to-server
-    if: ${{ needs.deploy-to-server.ssh_check == 'success' }}    
+    if: ${{ needs.deploy-to-server.outputs.ssh_check.outcome == 'success' }}    
     runs-on: ubuntu-latest
     steps:
       - name: Send Telegram message on success
+        if: ${{ needs.deploy-to-server.ssh_check == 'success' }}    
+
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_TO }}
@@ -105,7 +107,7 @@ jobs:
 
   send-telegram-message-failure:
     needs: deploy-to-server
-    if: ${{ needs.deploy-to-server.ssh_check == 'failure' }}    
+    if: ${{ needs.deploy-to-server.outputs.ssh_check.outcome == 'failure' }}    
     runs-on: ubuntu-latest
     steps:
       - name: Send Telegram message on failure
