@@ -91,7 +91,7 @@ jobs:
   
   send-telegram-message:
     needs: deploy-to-server
-    if: success()
+    if: ${{ steps.deploy-to-server.outputs.ssh_check == 'success' }}    
     runs-on: ubuntu-latest
     steps:
       - name: Send Telegram message on success
@@ -104,7 +104,7 @@ jobs:
 
   send-telegram-message-failure:
     needs: deploy-to-server
-    if: failure()
+    if: ${{ steps.deploy-to-server.outputs.ssh_check == 'failure' }}
     runs-on: ubuntu-latest
     steps:
       - name: Send Telegram message on failure
