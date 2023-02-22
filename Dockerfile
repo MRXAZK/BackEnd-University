@@ -1,0 +1,1 @@
+FROM mrxazk/ca-backend-university:latest
