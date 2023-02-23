@@ -105,6 +105,13 @@ jobs:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: "Deployment failed! 😞 Check the server and the workflow."
-          run: exit 1 
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          run: |
+            echo "Sending Telegram message on failure..."
+            if [ ${{ steps.ssh_check.outcome }} == 'failure' ]; then
+              echo "::error::Deployment failed!"
+              exit 1
+            fi
 
 
