@@ -105,5 +105,6 @@ jobs:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: "Deployment failed! 😞 Check the server and the workflow."
-          run : exit 1
+          run: exit 1 
+
 
