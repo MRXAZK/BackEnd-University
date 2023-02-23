@@ -90,28 +90,30 @@ jobs:
             docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
             docker run --rm --name ${{ secrets.DOCKER_REPOSITORY }} -d -p 80:8000 ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
   
-      - name: Send Telegram message on success
-        if: ${{ steps.ssh_check.outcome == 'success' }}
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: "Deployment successful! 🚀 Build and deploy to Docker Hub and Server is complete."
-      
-      - name: Send Telegram message on failure
-        if: ${{ steps.ssh_check.outcome == 'failure' }}
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: "Deployment failed! 😞 Check the server and the workflow."
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          run: |
-            echo "Sending Telegram message on failure..."
-            if [ ${{ steps.ssh_check.outcome }} == 'failure' ]; then
-              echo "::error::Deployment failed!"
-              exit 1
-            fi
+  send-telegram-message:
+      needs: deploy-to-server
+      if: ${{ needs.deploy-to-server.outputs.deployment-status == 'success' }}
+      runs-on: ubuntu-latest
+      steps:
+        - name: Send Telegram message on success
+          uses: appleboy/telegram-action@master
+          with:
+            to: ${{ secrets.TELEGRAM_TO }}
+            token: ${{ secrets.TELEGRAM_TOKEN }}
+            message: "Deployment successful! 🚀 Build and deploy to Docker Hub And Server is complete."
+        
 
+    send-telegram-message-failure:
+      needs: deploy-to-server
+      if: ${{ needs.deploy-to-server.outputs.deployment-status != 'success' }}
+      runs-on: ubuntu-latest
+      steps:
+        - name: Send Telegram message on failure
+          uses: appleboy/telegram-action@master
+          with:
+            to: ${{ secrets.TELEGRAM_TO }}
+            token: ${{ secrets.TELEGRAM_TOKEN }}
+            message: "Deployment failed! 😞 Check the server and the workflow."
+        - name: Fail the job
+          run: exit 1
 
