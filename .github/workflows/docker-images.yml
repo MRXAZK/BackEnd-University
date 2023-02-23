@@ -90,24 +90,16 @@ jobs:
             docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
             docker run --rm --name ${{ secrets.DOCKER_REPOSITORY }} -d -p 80:8000 ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }}
   
-  send-telegram-message:
-    needs: deploy-to-server
-    if: ${{ job.status == 'success' && steps.deploy-to-server.outputs.ssh_check.outcome == 'success' }}
-    runs-on: ubuntu-latest
-    steps:
       - name: Send Telegram message on success
+        if: ${{ steps.ssh_check.outcome == 'success' }}
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: "Deployment successful! 🚀 Build and deploy to Docker Hub and Server is complete."
       
-  send-telegram-message-failure:
-    needs: deploy-to-server
-    if: ${{ job.status == 'failure' || steps.deploy-to-server.outputs.ssh_check.outcome == 'failure' }}
-    runs-on: ubuntu-latest
-    steps:
       - name: Send Telegram message on failure
+        if: ${{ steps.ssh_check.outcome == 'failure' }}
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_TO }}
